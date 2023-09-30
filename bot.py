@@ -6,7 +6,7 @@ from aiogram.filters import Command
 from aiogram.filters import CommandObject
 
 
-BOT_TOKEN = '6607905600:AAE2jR8s398FPW6_2QgRtBiqAWKGjmYyTR4'
+BOT_TOKEN = 'token'
 API_URL = 'https://notariat.ru/api/probate-cases/eis-proxy'
 
 bot = Bot(token=BOT_TOKEN, parse_mode="HTML")
