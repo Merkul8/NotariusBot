@@ -1,12 +1,13 @@
 import requests
 import asyncio
 from aiogram import Bot, Dispatcher, F, types
-from aiogram.types import Message, InlineKeyboardButton
+from aiogram.types import Message, InlineKeyboardButton, FSInputFile
 from aiogram.filters import Command
 from aiogram.filters import CommandObject
 
 
-BOT_TOKEN = 'token'
+
+BOT_TOKEN = '6607905600:AAFMvnZJMZ-oIRj14Jfv5j6Ym1QjasAAs8g'
 API_URL = 'https://notariat.ru/api/probate-cases/eis-proxy'
 
 bot = Bot(token=BOT_TOKEN, parse_mode="HTML")
@@ -47,46 +48,36 @@ async def cmd_name(message: types.Message, command: CommandObject,):
     data = get_response_json(url, json)
     count = data['count']
     if count > 3:
-        await message.answer(f'Результат {count}')
         records = data['records']
-        # Получаем отсортированный словарь
-        sorted_records = sorted(records, key=lambda x: x['ChamberName'])
-        with open('data.txt', 'w', encoding='utf-8') as f:
-            for i in range(0, count):
-                birthd_d = sorted_records[i]['BirthDate']
-                # Форматирование даты рождения
-                if birthd_d == '0':
-                    birthd_d = birthd_d
-                else:
-                    birthd_d = f"{birthd_d[6:8]}.{birthd_d[4:6]}.{birthd_d[:4]}"
-                deathd_d = sorted_records[i]['DeathDate']
-                # Форматирование даты смерти
-                if deathd_d == '0':
-                    deathd_d = deathd_d
-                else:
-                    deathd_d = f"{deathd_d[6:8]}.{deathd_d[4:6]}.{deathd_d[:4]}"
-                address = sorted_records[i]['Address']
-                district = sorted_records[i]['DistrictName']
-                chamber = sorted_records[i]['ChamberName']
-                f.write(f'<b>{i + 1})</b><b>Дата рождения:{birthd_d}</b>\n<b>Дата смерти:{deathd_d}</b>\n<b>Адрес прописки:{address}</b>\n<b>Район нотариуса:{district}({chamber})</b>\n')
-        # Обход лимита на символы в сообщениях
-        with open('data.txt', 'r', encoding='utf-8') as f:
-            file_contents = f.read()
-            if len(file_contents) > 4096:
-                count = 0
-                result_message = ''
-                for line in file_contents.splitlines():
-                    count += len(line)
-                    if count <= 4096:
-                        result_message += line + '\n'
-                    else:
-                        await message.answer(result_message)
-                        result_message = line + '\n'
-                        count = len(line)
-                if result_message: 
-                    await message.answer(result_message)
-            else:
-                await message.answer(file_contents)
+        chambers = []
+        for i in records:
+            chambers.append(i['ChamberName'])
+        uniq_chamber = set(chambers)
+        # Записываем данные, сортируя по ChamberName
+        with open('result.html', 'w', encoding='utf-8') as f:
+            for j in uniq_chamber:
+                f.write(f'<h2>{j}</h2>')
+                for i in range(0, count):
+                    if j == records[i]['ChamberName']:
+                        birthd_d = records[i]['BirthDate']
+                        # Форматирование даты рождения
+                        if birthd_d == '0':
+                            birthd_d = birthd_d
+                        else:
+                            birthd_d = f"{birthd_d[6:8]}.{birthd_d[4:6]}.{birthd_d[:4]}"
+                        deathd_d = records[i]['DeathDate']
+                        # Форматирование даты смерти
+                        if deathd_d == '0':
+                            deathd_d = deathd_d
+                        else:
+                            deathd_d = f"{deathd_d[6:8]}.{deathd_d[4:6]}.{deathd_d[:4]}"
+                        address = records[i]['Address']
+                        district = records[i]['DistrictName']
+                        # Запись в HTML файл
+                        f.write(f'<div style="margin-left: 25px"><b> • </b><span>Дата рождения: {birthd_d}</span>, <span>Дата смерти: {deathd_d}</span>, <span>Адрес прописки: {address}</span>, <span>Район нотариуса: {district}</span></div><br>')
+        res_file = FSInputFile(filename="result.html", path=r"C:\Users\Merkul\Desktop\bot_avangard\result.html")
+        # Отправка файла
+        await message.answer_document(res_file, caption=f'Результат [{count}]', reply_markup=types.ReplyKeyboardRemove(selective=True))
     else:
         for i in range(0, count):
             birthd_d = data['records'][i]['BirthDate']
